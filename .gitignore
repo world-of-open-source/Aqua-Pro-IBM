@@ -1,4 +1,6 @@
 # Byte-compiled / optimized / DLL files
+*idea
+.idea*
 __pycache__/
 *.py[cod]
 *$py.class
@@ -50,6 +52,9 @@ coverage.xml
 # Translations
 *.mo
 *.pot
+2017*
+flaskenv*
+*flaskenv
 
 # Django stuff:
 *.log
