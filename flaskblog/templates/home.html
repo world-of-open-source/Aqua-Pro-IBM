@@ -1,15 +1,218 @@
 {% extends "layout.html" %}
+<link href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.css" rel="stylesheet">
+
 {% block content %}
     {% for post in posts %}
-        <article class="media content-section">
-          <div class="media-body">
-            <div class="article-metadata">
-              <a class="mr-2" href="#">{{ post.author }}</a>
-              <small class="text-muted">{{ post.date_posted }}</small>
-            </div>
-            <h2><a class="article-title" href="#">{{ post.title }}</a></h2>
-            <p class="article-content">{{ post.content }}</p>
-          </div>
-        </article>
+<article class="media content-section">
+    <div class="media-body">
+        <div class="article-metadata">
+            <a class="mr-2" href="#">{{ post.author }}</a>
+            <small class="text-muted">{{ post.date_posted }}</small>
+        </div>
+        <h2><a class="article-title" href={{url_for('graphs')}}>{{ post.title }}</a></h2>
+        <p class="article-content">{{ post.content }}</p>
+    </div>
+</article>
     {% endfor %}
-{% endblock content %}
+    <article class="media content-section">
+        <div class="media-body">
+            <figure>
+                <figcaption align="center"><h2>Location of leaks</h2></figcaption>
+                <img src="{{ url_for('static', filename='Pipeline Network with Leak Positions.PNG') }}" align="middle" style="width:100%" />
+
+            </figure>       
+        </div>
+    </article>
+    <div class="content-section">
+        <div class="container">
+            <div class="media-body" align="center">
+                <h1>
+                    Flow Monitoring
+                </h1>
+            </div>
+
+            {% for i in range(1,13) %}
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-body">
+                            <canvas id="canvas{{i}}"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <br />
+            {% endfor %}
+
+        </div>
+    </div>
+    <form id="target" action="" method="post">
+        <input id="url" type="hidden" value="" name="url" />
+        <input type="hidden" value="submit" />
+    </form>
+
+    <!--suppress JSUnresolvedLibraryURL -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.0/jquery.min.js"></script>
+    <!--suppress JSUnresolvedLibraryURL -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    <!--suppress JSUnresolvedLibraryURL -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.js"></script>
+    <script>
+
+        $(document).ready(function () {
+            const conf = new Array(12);
+            for (var i = 0; i < 12; i++) {
+                conf[i] = {
+                    type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: "Sensor"+(i+1),
+                        backgroundColor: 'rgb(95, 120, 138)',
+                        borderColor: 'rgb(95, 120, 138)',
+                        data: [],
+                        fill: false,
+                    }],
+                },
+                options: {
+                    responsive: true,
+                    title: {
+                        display: true,
+                        text: 'Sensor Monitoring'
+
+                    },
+                    tooltips: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    hover: {
+                        mode: 'nearest',
+                        intersect: true
+                    },
+                    scales: {
+                        xAxes: [{
+                            display: true,
+                            scaleLabel: {
+                                display: true,
+                                labelString: 'Time'
+                            }
+                        }],
+                        yAxes: [{
+                            display: true,
+                            scaleLabel: {
+                                display: true,
+                                labelString: 'Value'
+                            }
+                        }]
+                    }
+                }
+            };
+
+                }
+            /*const config = {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: "Sensor1",
+                        backgroundColor: 'rgb(95, 120, 138)',
+                        borderColor: 'rgb(95, 120, 138)',
+                        data: [],
+                        fill: false,
+                    }],
+                },
+                options: {
+                    responsive: true,
+                    title: {
+                        display: true,
+                        text: 'Sensor Monitoring'
+
+                    },
+                    tooltips: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    hover: {
+                        mode: 'nearest',
+                        intersect: true
+                    },
+                    scales: {
+                        xAxes: [{
+                            display: true,
+                            scaleLabel: {
+                                display: true,
+                                labelString: 'Time'
+                            }
+                        }],
+                        yAxes: [{
+                            display: true,
+                            scaleLabel: {
+                                display: true,
+                                labelString: 'Value'
+                            }
+                        }]
+                    }
+                }
+            };*/
+
+            const context = document.getElementById('canvas1').getContext('2d');
+            const context2 = document.getElementById('canvas2').getContext('2d');
+
+            //const lineChart1 = new Chart(context, conf[0]);
+            //const lineChart2 = new Chart(context2, conf[1]);
+
+            const source1 = new EventSource("/chart-data");
+            //const source2 = new EventSource("/chart-data");
+            /*source1.onmessage = function (event) {
+                const data = JSON.parse(event.data);
+                var path = window.location.pathname;
+                console.log(path)
+                console.log(data.values);
+                if (data.value[5] == 6) {
+
+                    $("#url").value = path;
+                    $("#target").submit();
+                }
+
+                if (conf[0].data.labels.length === 20) {
+                    conf[0].data.labels.shift();
+                    conf[0].data.datasets[0].data.shift();
+                }
+                conf[0].data.labels.push(data.time);
+                conf[0].data.datasets[0].data.push(data.value);
+                lineChart1.update();
+                lineChart2.update();
+            }*/
+            const contexts = new Array(12);
+            const lineChart = new Array(12);
+            for (var i = 0; i < 12; i++) {
+                console.log("canvas" + (i + 1));
+                contexts[i] = document.getElementById("canvas"+(i+1)).getContext('2d');
+                lineChart[i] = new Chart(contexts[i], conf[i]);
+            }
+            source1.onmessage = function (event) {
+                const data = JSON.parse(event.data);
+                console.log(data);
+                var path = window.location.pathname;
+                console.log(path);
+                console.log(data.values);
+                if (data.values[5] == 16) {
+
+                    $("#url").value = path;
+                    $("#target").submit();
+                }
+                for (var i = 0; i < 12; i++) {
+                    if (conf[i].data.labels.length === 20) {
+                        conf[i].data.labels.shift();
+                        conf[i].data.datasets[0].data.shift();
+                    }
+                    conf[i].data.labels.push(data.time);
+                    conf[i].data.datasets[0].data.push(data.values[i]);
+                    lineChart[i].update();
+                }
+            }
+
+        });
+    </script>
+    {% endblock content %}

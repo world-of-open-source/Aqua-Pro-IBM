@@ -1,13 +1,16 @@
 import os
 import secrets
 from PIL import Image
-from flask import render_template, url_for, flash, redirect, request
-from flaskblog import app, db, bcrypt
+from flask import render_template, url_for, flash, redirect, request, Response
+from flaskblog import app, db, bcrypt, changes
 from flaskblog.forms import RegistrationForm, LoginForm, UpdateAccountForm
-from flaskblog.models import User, Post
+from flaskblog.models import User, Post, Algorithms
 from flask_login import login_user, current_user, logout_user, login_required
+import json
+import time
+from datetime import datetime
 
-
+message = 0
 posts = [
     {
         'author': 'Flowrate: Normal',
@@ -25,14 +28,51 @@ posts = [
 
 
 @app.route("/")
-@app.route("/home")
+def index():
+    return redirect (url_for('login'))
+@app.route("/home",methods=['GET','POST'])
+@login_required
 def home():
-    return render_template('home.html', posts=posts)
+    #chart_data()
+    global message
+    if request.method == 'POST':
+        path=request.form['url']
+        print("Leak in graphs")
+        print('Path',path)
+        flash('Leak Detected','danger')
+        message+=1
 
+        return redirect(path)#,msg=message)
+    return render_template('home.html', msg=message)
 
+@app.route('/chart-data',methods=['GET'])
+def chart_data():
+    def generate_random_data():
+        for change in changes:
+            if change is None:
+                pass
+            else:
+                json_data = json.dumps(
+                    {'time':datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                        'values':[1,2,3,4,5,6,7,8,9,10,11,12]})
+                print(json_data)
+                #with app.test_request_context():
+                    #if(change['doc']['temperatureField']==20):
+                        #print("Leak")
+                        #message="Leak"
+                        
+                        #print("After return")
+                        #return app.response_class(url_for('graphs'))
+                        #changes.stop()
+                        #return redirect(url_for('graphs',title='Graphs',msg=message),Response=Response.)
+                yield f"data:{json_data}\n\n"
+                #if checkleak(change['doc']):
+                    
+                #time.sleep(1)
+    return Response(generate_random_data(), mimetype='text/event-stream')
 @app.route("/about")
 def about():
-    return render_template('about.html', title='About')
+    return render_template('about.html', title='About',)
 
 
 @app.route("/register", methods=['GET', 'POST'])
@@ -47,7 +87,7 @@ def register():
         db.session.commit()
         flash('Your account has been created! You are now able to log in', 'success')
         return redirect(url_for('login'))
-    return render_template('register.html', title='Register', form=form)
+    return render_template('register.html', title='Register', form=form,msg=message)
 
 
 @app.route("/login", methods=['GET', 'POST'])
@@ -63,7 +103,7 @@ def login():
             return redirect(next_page) if next_page else redirect(url_for('home'))
         else:
             flash('Login Unsuccessful. Please check email and password', 'danger')
-    return render_template('login.html', title='Login', form=form)
+    return render_template('login.html', title='Login', form=form,msg=message)
 
 
 @app.route("/logout")
@@ -104,4 +144,17 @@ def account():
         form.email.data = current_user.email
     image_file = url_for('static', filename='profile_pics/' + current_user.image_file)
     return render_template('account.html', title='Account',
-                           image_file=image_file, form=form)
+                           image_file=image_file, form=form,msg=message)
+@app.route('/graphs',methods=['GET','POST'])
+def graphs():
+    global message
+    if request.method == 'POST':
+        path=request.form['url']
+        print("Leak in graphs")
+        print('Path',path)
+        flash('Leak Detected','danger')
+        message="Leak"
+
+        return redirect(path)#,msg=message)
+
+    return render_template('graphs.html',title='Graphs',msg=message)
